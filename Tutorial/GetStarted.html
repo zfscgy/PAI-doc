@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html lang="cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview &#8212; PAI 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Client" href="../Client/Client.html" />
+    <link rel="prev" title="Welcome to PAI&#39;s documentation!" href="../index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pai">
+<h2>PAI简介<a class="headerlink" href="#pai" title="Permalink to this headline">¶</a></h2>
+<p>PAI - Private Artificial Intelligence 是一套在保护隐私的基础上进行AI建模的框架。PAI通过多方安全计算（MPC）、联邦学习等技术来实现隐私保护下的计算。PAI通过不同的Client类来实现不同的计算任务，底层采用GRPC框架进行通讯。在实际应用中，各个参与方都会运行自己的Client类的代码，显式声明send和receive，保证训练过程的可控。因此PAI是一个适用于实际生产环境下部署的框架。</p>
+</div>
+<div class="section" id="get-started">
+<h2>Get Started<a class="headerlink" href="#get-started" title="Permalink to this headline">¶</a></h2>
+<p>PAI目前已经实现了一些基本的 <a class="reference internal" href="../Client/Client.html#Client.BaseClient" title="Client.BaseClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">Client</span></code></a> 类，其中包括加密矩阵相乘的SecureMultiplicationClient以及用于辅助加密矩阵相乘的TripletProvider。显然，这里的矩阵相乘是用Beaver Triple来实现的，因此我们总共要启动3个Client。</p>
+<p>示例代码如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">Client.MPCClient</span> <span class="kn">import</span> <span class="n">MPCClientParas</span>
+<span class="kn">from</span> <span class="nn">Client.Common.SecureMultiplicationClient</span> <span class="kn">import</span> <span class="n">SecureMultiplicationClient</span>
+<span class="kn">from</span> <span class="nn">Client.MPCProviders.TripletProducer</span> <span class="kn">import</span> <span class="n">TripletProducer</span>
+<span class="kn">from</span> <span class="nn">Communication.RPCComm</span> <span class="kn">import</span> <span class="n">Peer</span>
+<span class="kn">from</span> <span class="nn">Utils.Log</span> <span class="kn">import</span> <span class="n">Logger</span>
+<span class="n">ip_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;127.0.0.1:8900&#39;</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;127.0.0.1:8901&#39;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;127.0.0.1:8902&#39;</span>
+<span class="p">}</span>
+<span class="n">channel0</span> <span class="o">=</span> <span class="n">Peer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;0.0.0.0:8900&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ip_dict</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;0:&quot;</span><span class="p">))</span>
+<span class="n">channel1</span> <span class="o">=</span> <span class="n">Peer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;0.0.0.0:8901&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ip_dict</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;1:&quot;</span><span class="p">))</span>
+<span class="n">channel2</span> <span class="o">=</span> <span class="n">Peer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;0.0.0.0:8902&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">ip_dict</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;triplet:&quot;</span><span class="p">))</span>
+<span class="n">mul_client_0</span> <span class="o">=</span> <span class="n">SecureMultiplicationClient</span><span class="p">(</span><span class="n">channel0</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;0:&quot;</span><span class="p">))</span>
+<span class="n">mul_client_1</span> <span class="o">=</span> <span class="n">SecureMultiplicationClient</span><span class="p">(</span><span class="n">channel1</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;1:&quot;</span><span class="p">))</span>
+<span class="n">triplet_client</span> <span class="o">=</span> <span class="n">TripletProducer</span><span class="p">(</span><span class="n">channel2</span><span class="p">,</span> <span class="n">Logger</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;triplet:&quot;</span><span class="p">),</span> <span class="n">MPCClientParas</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">triplet_client</span><span class="o">.</span><span class="n">start_listening</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">mat0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">mul_0_th</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">mul_client_0</span><span class="o">.</span><span class="n">multiply_AB_with</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">mat0</span><span class="p">))</span>
+<span class="n">mul_1_th</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">mul_client_1</span><span class="o">.</span><span class="n">multiply_BA_with</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">mat1</span><span class="p">))</span>
+<span class="n">mul_0_th</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="n">mul_1_th</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="n">mul_0_th</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="n">mul_1_th</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="n">out0</span> <span class="o">=</span> <span class="n">mul_client_0</span><span class="o">.</span><span class="n">product</span>
+<span class="n">out1</span> <span class="o">=</span> <span class="n">mul_client_1</span><span class="o">.</span><span class="n">product</span>
+</pre></div>
+</div>
+<p>首先我们需要定义一个 <code class="code docutils literal notranslate"><span class="pre">ip_dict</span></code> ，来建立一个整数（ID）到IP地址的映射。接下来定义Channel，这里采用的是GRPCChannel(Peer)，第一个参数便是自己的ID，第二个参数是自己运行的端口，其中 <code class="code docutils literal notranslate"><span class="pre">0.0.0.0</span></code> 表示监听所有IP的请求。注意在实际生产中，必须要对IP地址进行过滤。第三个参数对应GRPC Server的max_workers参数，第4个参数便是 <code class="code docutils literal notranslate"><span class="pre">ip_dict</span></code> 。 <code class="code docutils literal notranslate"><span class="pre">logger</span></code> 参数指定日志记录类的实例。</p>
+<p>在定义Client的时候，注意到 <code class="code docutils literal notranslate"><span class="pre">TripletProducer</span></code> 需要传入一个 <code class="code docutils literal notranslate"><span class="pre">MPCClientParas</span></code> 类型的参数，这个参数用于标记MPC任务中各个节点的角色，在这里不需要用到。而最后一个参数 <code class="code docutils literal notranslate"><span class="pre">[0,1]</span></code> 指定了 <code class="code docutils literal notranslate"><span class="pre">TripletProducer</span></code> 需要监听的节点的ID。因为这里两个要进行乘法的节点的ID是0、1，所以传入 <code class="code docutils literal notranslate"><span class="pre">[0,1]</span></code> 。</p>
+<p>如上代码最终产生了一个 <code class="code docutils literal notranslate"><span class="pre">out0</span></code> 和 <code class="code docutils literal notranslate"><span class="pre">out1</span></code> 两个变量。</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PAI</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pai">PAI简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-started">Get Started</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Client/Client.html">Client</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../index.html" title="previous chapter">Welcome to PAI's documentation!</a></li>
+      <li>Next: <a href="../Client/Client.html" title="next chapter">Client</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Zheng Fei.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/Tutorial/GetStarted.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

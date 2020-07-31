@@ -1,0 +1,47 @@
+.. py:module:: Client
+
+Client
+======
+
+Client是执行联邦计算任务的基本单元，具有基础的收发信息的功能。每一个Client都具有一个整数来标识身份，
+称为id。Client通过其Channel类的实例成员进行通信。在Channel中，id会被转化成为地址从而实现远程通信的功能。
+
+不同的Client可以由相同的id，当他们采用同样的Channel时。但是必须保证他们要错开工作，或是在收发消息的时候加入 *key* 关键字来复用一个Channel。
+在Channel中，会针对每一个通讯的id开一个缓冲区队列在默认的 *key* None上面。即，必须要把上一个消息取出才能取下一个消息，如下：
+
+- key=None: msg1, msg2, msg3
+
+必须依次取出msg1, msg2 才能得到msg3
+
+但是如果发送消息的时候带一个指定的*key*参数，则可以使用这个*key*对应的缓冲区队列（如果没有则会开辟一个）
+如下
+
+- key=None: msg1, msg2, msg3
+- key=1:    msg4
+
+可以使用client.receive_msg(sender, type, key=1)直接取出msg4。
+
+.. py:class:: BaseClient
+
+    .. py:method:: __init__(self, channel, logger)
+
+        BaseClient的构造函数。
+
+        :param Channel channel: 用于通信的Channel类的实例。
+        :param Logger logger: 用于日志记录的Logger类的实例。
+
+    .. py:method:: receive_msg(self, sender: int, time_out=None, key=None, **kwargs)
+
+        直接调用Channel的receive_msg方法。
+
+        :param int sender: 表示发送消息的Client的id
+        :param float time_out: 即最多等待这段时间（秒）
+        :param key: 使得与同一个id进行通信时依然可以并行
+
+    .. py:method:: send_msg(self, receiver: int, msg: PackedMessage, time_out=None)
+
+        直接调用Channel的send_msg方法。
+
+        :param int receiver: 表示接收消息的Client的id
+        :param PackedMessage msg: 表示要发送的消息
+        :param float time_out: 发送的尝试时间

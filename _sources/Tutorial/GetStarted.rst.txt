@@ -1,0 +1,52 @@
+Overview
+========
+PAI简介
+---------------
+PAI - Private Artificial Intelligence 是一套在保护隐私的基础上进行AI建模的框架。PAI通过多方安全计算（MPC）、联邦学习等技术来实现隐私保护下的计算。PAI通过不同的Client类来实现不同的计算任务，底层采用GRPC框架进行通讯。在实际应用中，各个参与方都会运行自己的Client类的代码，显式声明send和receive，保证训练过程的可控。因此PAI是一个适用于实际生产环境下部署的框架。
+
+Get Started
+------------
+PAI目前已经实现了一些基本的 :py:class:`Client<Client.BaseClient>` 类，其中包括加密矩阵相乘的SecureMultiplicationClient以及用于辅助加密矩阵相乘的TripletProvider。显然，这里的矩阵相乘是用Beaver Triple来实现的，因此我们总共要启动3个Client。
+
+示例代码如下：
+
+.. code-block:: python
+
+    import threading
+    import time
+    import numpy as np
+    from Client.MPCClient import MPCClientParas
+    from Client.Common.SecureMultiplicationClient import SecureMultiplicationClient
+    from Client.MPCProviders.TripletProducer import TripletProducer
+    from Communication.RPCComm import Peer
+    from Utils.Log import Logger
+    ip_dict = {
+        0: '127.0.0.1:8900',
+        1: '127.0.0.1:8901',
+        2: '127.0.0.1:8902'
+    }
+    channel0 = Peer(0, '0.0.0.0:8900', 3, ip_dict, logger=Logger(prefix="0:"))
+    channel1 = Peer(1, '0.0.0.0:8901', 3, ip_dict, logger=Logger(prefix="1:"))
+    channel2 = Peer(2, '0.0.0.0:8902', 3, ip_dict, logger=Logger(prefix="triplet:"))
+    mul_client_0 = SecureMultiplicationClient(channel0, logger=Logger(prefix="0:"))
+    mul_client_1 = SecureMultiplicationClient(channel1, logger=Logger(prefix="1:"))
+    triplet_client = TripletProducer(channel2, Logger(prefix="triplet:"), MPCClientParas([0, 1], -1, -1, 2), [0, 1])
+
+    threading.Thread(target=triplet_client.start_listening).start()
+    time.sleep(3)
+    mat0 = np.random.uniform(0, 1, [5, 10])
+    mat1 = np.random.uniform(0, 1, [10, 20])
+    mul_0_th = threading.Thread(target=mul_client_0.multiply_AB_with, args=(1, 2, (10, 20), mat0))
+    mul_1_th = threading.Thread(target=mul_client_1.multiply_BA_with, args=(0, 2, (5, 10), mat1))
+    mul_0_th.start()
+    mul_1_th.start()
+    mul_0_th.join()
+    mul_1_th.join()
+    out0 = mul_client_0.product
+    out1 = mul_client_1.product
+
+首先我们需要定义一个 :code:`ip_dict` ，来建立一个整数（ID）到IP地址的映射。接下来定义Channel，这里采用的是GRPCChannel(Peer)，第一个参数便是自己的ID，第二个参数是自己运行的端口，其中 :code:`0.0.0.0` 表示监听所有IP的请求。注意在实际生产中，必须要对IP地址进行过滤。第三个参数对应GRPC Server的max_workers参数，第4个参数便是 :code:`ip_dict` 。 :code:`logger` 参数指定日志记录类的实例。
+
+在定义Client的时候，注意到 :code:`TripletProducer` 需要传入一个 :code:`MPCClientParas` 类型的参数，这个参数用于标记MPC任务中各个节点的角色，在这里不需要用到。而最后一个参数 :code:`[0,1]` 指定了 :code:`TripletProducer` 需要监听的节点的ID。因为这里两个要进行乘法的节点的ID是0、1，所以传入 :code:`[0,1]` 。
+
+如上代码最终产生了一个 :code:`out0` 和 :code:`out1` 两个变量。
