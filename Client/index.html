@@ -1,0 +1,367 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="cn" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Client &mdash; PAI 0.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="任务训练流水线" href="../Tutorial/TaskPipeline.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> PAI
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../Tutorial/GetStarted.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../Tutorial/GetStarted.html#pai">PAI简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Tutorial/GetStarted.html#get-started">Get Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Tutorial/GetStarted.html#id1">神经网络训练</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Tutorial/TaskPipeline.html">任务训练流水线</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../Tutorial/TaskPipeline.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Tutorial/TaskPipeline.html#task">任务 Task</a></li>
+</ul>
+</li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#baseclient">BaseClient</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mpcclient">MPCClient</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PAI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Client</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Client/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="client">
+<h1>Client<a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h1>
+<p>Client是执行联邦计算任务的基本单元，具有基础的收发信息的功能。每一个Client都具有一个整数来标识身份，
+称为id。Client通过其Channel类的实例成员进行通信。在Channel中，id会被转化成为地址从而实现远程通信的功能。</p>
+<p>不同的Client可以由相同的id，当他们采用同样的Channel时。但是必须保证他们要错开工作，或是在收发消息的时候加入 <em>key</em> 关键字来复用一个Channel。
+在Channel中，会针对每一个通讯的id开一个缓冲区队列在默认的 <em>key</em> None上面。即，必须要把上一个消息取出才能取下一个消息，如下：</p>
+<ul class="simple">
+<li><p>key=None: msg1, msg2, msg3</p></li>
+</ul>
+<p>必须依次取出msg1, msg2 才能得到msg3</p>
+<p>但是如果发送消息的时候带一个指定的*key*参数，则可以使用这个*key*对应的缓冲区队列（如果没有则会开辟一个）
+如下</p>
+<ul class="simple">
+<li><p>key=None: msg1, msg2, msg3</p></li>
+<li><p>key=1:    msg4</p></li>
+</ul>
+<p>可以使用client.receive_msg(sender, type, key=1)直接取出msg4。</p>
+<span class="target" id="module-Client.Client"></span><div class="section" id="baseclient">
+<h2>BaseClient<a class="headerlink" href="#baseclient" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="Client.Client.BaseClient">
+<em class="property">class </em><code class="sig-prename descclassname">Client.Client.</code><code class="sig-name descname">BaseClient</code><a class="headerlink" href="#Client.Client.BaseClient" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="Client.Client.BaseClient.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">channel</span></em>, <em class="sig-param"><span class="n">logger</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.Client.BaseClient.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>BaseClient的构造函数。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>channel</strong> (<em>Channel</em>) -- 用于通信的Channel类的实例。</p></li>
+<li><p><strong>logger</strong> (<em>Logger</em>) -- 用于日志记录的Logger类的实例。</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="Client.Client.BaseClient.receive_msg">
+<code class="sig-name descname">receive_msg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">sender</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">time_out</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.Client.BaseClient.receive_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>直接调用Channel的receive_msg方法。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sender</strong> (<em>int</em>) -- 表示发送消息的Client的id</p></li>
+<li><p><strong>time_out</strong> (<em>float</em>) -- 即最多等待这段时间（秒）</p></li>
+<li><p><strong>key</strong> -- 使得与同一个id进行通信时依然可以并行</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="Client.Client.BaseClient.send_msg">
+<code class="sig-name descname">send_msg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">receiver</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">msg</span><span class="p">:</span> <span class="n">PackedMessage</span></em>, <em class="sig-param"><span class="n">time_out</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.Client.BaseClient.send_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>直接调用Channel的send_msg方法。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>receiver</strong> (<em>int</em>) -- 表示接收消息的Client的id</p></li>
+<li><p><strong>msg</strong> (<em>PackedMessage</em>) -- 表示要发送的消息</p></li>
+<li><p><strong>time_out</strong> (<em>float</em>) -- 发送的尝试时间</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="Client.Client.BaseClient.receive_check_msg">
+<code class="sig-name descname">receive_check_msg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">sender</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">header</span></em>, <em class="sig-param"><span class="n">time_out</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.Client.BaseClient.receive_check_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>接收消息，消息头必须为 <code class="code docutils literal notranslate"><span class="pre">header</span></code> 或是其中的一种。 <code class="code docutils literal notranslate"><span class="pre">header</span></code> 可以是单个 <code class="xref py py-class docutils literal notranslate"><span class="pre">MessageType</span></code>。如果在指定时间内未接收到或接收到的消息头不匹配将产生异常。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sender</strong> (<em>int</em>) -- 消息发送方的id</p></li>
+<li><p><strong>header</strong> (<em>MessageType|list</em><em>[</em><em>MessageType</em><em>]</em>) -- 期望接收到的消息类型</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="Client.Client.BaseClient.send_check_msg">
+<code class="sig-name descname">send_check_msg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">receiver</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">msg</span><span class="p">:</span> <span class="n">PackedMessage</span></em>, <em class="sig-param"><span class="n">time_out</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.Client.BaseClient.send_check_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>发送消息，若没有成功的时候会返回一个异常。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>receiver</strong> (<em>int</em>) -- 表示接收消息的Client的id</p></li>
+<li><p><strong>msg</strong> (<em>PackedMessage</em>) -- 表示要发送的消息</p></li>
+<li><p><strong>time_out</strong> (<em>float</em>) -- 发送的尝试时间</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-Client.MPCClient"></span></div>
+<div class="section" id="mpcclient">
+<h2>MPCClient<a class="headerlink" href="#mpcclient" title="Permalink to this headline">¶</a></h2>
+<p>MPCClient在 <a class="reference internal" href="#Client.Client.BaseClient" title="Client.Client.BaseClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">Client</span></code></a> 上做了一层包装，使其包含了MPC计算的一些基本设置.</p>
+<dl class="py class">
+<dt id="Client.MPCClient.MPCClientParas">
+<em class="property">class </em><code class="sig-prename descclassname">Client.MPCClient.</code><code class="sig-name descname">MPCClientParas</code><a class="headerlink" href="#Client.MPCClient.MPCClientParas" title="Permalink to this definition">¶</a></dt>
+<dd><p>MPCClientParas是MPCClient初始化的参数之一，主要是各个参与方的id。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_client_ids</strong> (<em>list&lt;int&gt;</em>) -- 在训练过程中提供特征的Client的id。</p></li>
+<li><p><strong>label_client_id</strong> (<em>int</em>) -- 提供标签的Client的id。</p></li>
+<li><p><strong>main_client_id</strong> (<em>int</em>) -- 主节点Client的id。</p></li>
+<li><p><strong>crypto_producer_id</strong> (<em>int</em>) -- 提供加密服务的Client的id，比如秘密分享矩阵乘法的Beaver Triple提供方。</p></li>
+<li><p><strong>int&gt; other_clients</strong> (<em>dict&lt;str</em><em>,</em>) -- 其他Client的字典，适用于特殊需求。</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="Client.MPCClient.ClientMode">
+<em class="property">class </em><code class="sig-prename descclassname">Client.MPCClient.</code><code class="sig-name descname">ClientMode</code><a class="headerlink" href="#Client.MPCClient.ClientMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>一个Enum，包含了Train, Test, Predict, Any四个值。用于在训练过程中标记Client具体处于哪一种状态。</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="Client.MPCClient.MPCClient">
+<em class="property">class </em><code class="sig-prename descclassname">Client.MPCClient.</code><code class="sig-name descname">MPCClient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">BaseClient</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.MPCClient.MPCClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>该类继承自 <a class="reference internal" href="#Client.Client.BaseClient" title="Client.Client.BaseClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseClient</span></code></a> 类，初始化时多了 <a class="reference internal" href="#Client.MPCClient.MPCClientParas" title="Client.MPCClient.MPCClientParas"><code class="xref py py-class docutils literal notranslate"><span class="pre">MPCClientParas</span></code></a> 参数 <code class="code docutils literal notranslate"><span class="pre">mpc_paras</span></code>。</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="Client.MPCClient.PreprocessClient">
+<em class="property">class </em><code class="sig-prename descclassname">Client.MPCClient.</code><code class="sig-name descname">PreprocessClient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MPCClient</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Client.MPCClient.PreprocessClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>该类在 <code class="code docutils literal notranslate"><span class="pre">MPCClient</span></code> 基础上增加了两个初始化参数 <code class="code docutils literal notranslate"><span class="pre">source_data_file</span></code> 和 <code class="code docutils literal notranslate"><span class="pre">out_data_dir</span></code>。</p>
+</dd></dl>
+
+<dl class="py class">
+<dt>
+<code class="sig-name descname">DataClient(MPCClient):</code></dt>
+<dd><p>该类在 <code class="code docutils literal notranslate"><span class="pre">MPCClient</span></code> 的基础上增加了 <code class="code docutils literal notranslate"><span class="pre">train_data_loader</span></code> 和 <code class="code docutils literal notranslate"><span class="pre">test_data_loader</span></code> 两个参数。</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../Tutorial/TaskPipeline.html" class="btn btn-neutral float-left" title="任务训练流水线" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Zheng Fei
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

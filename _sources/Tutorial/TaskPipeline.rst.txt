@@ -1,0 +1,83 @@
+任务训练流水线
+===============
+Overview
+--------
+Client只是执行交互计算的基本单元，在实际使用中，需要调用多个Client进行工作。此时如果让各个参与方手动编写Client的启动脚本并且商量好同时启动时不现实的。因此PAI提供了用于监听的Flask应用。在训练任务开始之前，各个节点首先运行其任务监听服务器。同时有一个主服务器需要运行。需要进行训练任务的用户只跟主服务器通信，主服务器收到用户的请求之后将请求进行处理，再分发给各个子节点。子节点随即做出相应反应。
+
+任务 Task
+----------
+任务就是多个节点通过运行各自的Client从而实现某一计算的行为。在PAI中，有两种形式的任务。
+
+- 预处理任务：预处理任务的目的是把原始数据转换成为样本对齐、且进行筛选过后的数据。各个数据提供方通过协商密钥、上传加密后的ID给主节点来获得他们的共同样本并且按照同样的顺序排列。
+- 训练任务：训练任务就是多个节点在处理后的数据集上进行训练和测试。各个数据提供方必须采用预处理任务时产生的数据集进行训练。
+
+任务创建
+``````````
+任务发起方需要通过POST方法提交一个JSON到主服务器的 :code:`/createTask` 路径。比如预处理任务的JSON可以如下：
+
+.. code-block:: python
+
+    {
+        "task_name": "test-datagen",  # Task的名称
+        # 要用到的节点的列表
+        "clients": [
+            {
+                "role": "main_client",  # 节点角色，目前有main_client, crypto_producer, feature_client, label_client 4种
+                "addr": "127.0.0.1",  # 节点的IP地址
+                "http_port": 8377,  # 节点的Http服务器端口（一般是固定的）
+                # 节点要运行的Client的具体配置
+                "client_config": {
+                    "client_type": "alignment_main",  # Client 类型，这里是样本对齐主节点
+                    "computation_port": 8378,  # Client进行MPC计算的RPC端口
+                }
+            },
+            {
+                "role": "feature_client",
+                "addr": "127.0.0.1",
+                "http_port": 8084,
+                "client_config": {
+                    "client_type": "alignment_data",  # 样本对齐的数据节点，这种Client需要有额外的参数，直接加在下面即可。
+                    "computation_port": 8085,
+                    "raw_data_path": "Splitted_Indexed_Data/credit_default_data1.csv",  # 原始数据路径
+                    "out_data_path": "test-f1",  # 对齐后的数据路径（这里的路径并不是绝对路径，而是根据用户配置的某个根目录的相对路径），
+                    "columns": ["X1", "X2"]
+                }
+            },
+            {
+                "role": "feature_client",
+                "addr": "127.0.0.1",
+                "http_port": 8082,
+                "client_config": {
+                    "computation_port": 8083,
+                    "client_type": "alignment_data",
+                    "raw_data_path": "Splitted_Indexed_Data/credit_default_data2.csv",
+                    "out_data_path": "test-f2"
+                }
+            },
+            {
+                "role": "label_client",
+                "addr": "127.0.0.1",
+                "http_port": 8884,
+                "client_config": {
+                    "computation_port": 18885,
+                    "client_type": "alignment_data",
+                    "raw_data_path": "Splitted_Indexed_Data/credit_default_label.csv",
+                    "out_data_path": "test-l"
+                }
+            }
+        ]
+    }
+
+JSON包含一个 :code:`task_name` 属性表示任务的名称。 :code:`clients` 属性表示参与节点的列表。其中 :code:`role` 属性表示该节点的角色，总共有以下五种：
+
+- feature_client: 提供训练的样本特征的节点
+- label_client：提供训练的样本标签的节点
+- main_client: 训练的主节点，进行统一的调度或者是主要计算
+- crypto_producer：训练的加密提供方，比如提供矩阵乘法的Beaver Triple
+
+注意在一个任务中，并非一定要四种角色都有。比如一般预处理任务并不需要 :code:`crypto_producer`，因为不需要进行加密的矩阵乘法。
+
+在接收到这个JSON文件后，主服务器会将其存储。如果是预处理任务，主服务器还将获取其各个节点产生的数据文件名称，将任务名-数据文件名称的映射保存下来。然后主服务器根据该JSON文件生成各个子节点的任务请求，发送给子节点的服务。子节点服务器收到请求后在指定目录下创建文件夹和任务的python脚本，等待任务开始。
+
+任务开始
+`````````

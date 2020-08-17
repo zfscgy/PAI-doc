@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="cn" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>任务训练流水线 &mdash; PAI 0.0.2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Client" href="../Client/index.html" />
+    <link rel="prev" title="Overview" href="GetStarted.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> PAI
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GetStarted.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="GetStarted.html#pai">PAI简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GetStarted.html#get-started">Get Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GetStarted.html#id1">神经网络训练</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">任务训练流水线</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#task">任务 Task</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">任务创建</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">任务开始</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Client/index.html">Client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../Client/index.html#baseclient">BaseClient</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Client/index.html#mpcclient">MPCClient</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PAI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>任务训练流水线</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Tutorial/TaskPipeline.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>任务训练流水线<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Client只是执行交互计算的基本单元，在实际使用中，需要调用多个Client进行工作。此时如果让各个参与方手动编写Client的启动脚本并且商量好同时启动时不现实的。因此PAI提供了用于监听的Flask应用。在训练任务开始之前，各个节点首先运行其任务监听服务器。同时有一个主服务器需要运行。需要进行训练任务的用户只跟主服务器通信，主服务器收到用户的请求之后将请求进行处理，再分发给各个子节点。子节点随即做出相应反应。</p>
+</div>
+<div class="section" id="task">
+<h2>任务 Task<a class="headerlink" href="#task" title="Permalink to this headline">¶</a></h2>
+<p>任务就是多个节点通过运行各自的Client从而实现某一计算的行为。在PAI中，有两种形式的任务。</p>
+<ul class="simple">
+<li><p>预处理任务：预处理任务的目的是把原始数据转换成为样本对齐、且进行筛选过后的数据。各个数据提供方通过协商密钥、上传加密后的ID给主节点来获得他们的共同样本并且按照同样的顺序排列。</p></li>
+<li><p>训练任务：训练任务就是多个节点在处理后的数据集上进行训练和测试。各个数据提供方必须采用预处理任务时产生的数据集进行训练。</p></li>
+</ul>
+<div class="section" id="id2">
+<h3>任务创建<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>任务发起方需要通过POST方法提交一个JSON到主服务器的 <code class="code docutils literal notranslate"><span class="pre">/createTask</span></code> 路径。比如预处理任务的JSON可以如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;task_name&quot;</span><span class="p">:</span> <span class="s2">&quot;test-datagen&quot;</span><span class="p">,</span>  <span class="c1"># Task的名称</span>
+    <span class="c1"># 要用到的节点的列表</span>
+    <span class="s2">&quot;clients&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;main_client&quot;</span><span class="p">,</span>  <span class="c1"># 节点角色，目前有main_client, crypto_producer, feature_client, label_client 4种</span>
+            <span class="s2">&quot;addr&quot;</span><span class="p">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>  <span class="c1"># 节点的IP地址</span>
+            <span class="s2">&quot;http_port&quot;</span><span class="p">:</span> <span class="mi">8377</span><span class="p">,</span>  <span class="c1"># 节点的Http服务器端口（一般是固定的）</span>
+            <span class="c1"># 节点要运行的Client的具体配置</span>
+            <span class="s2">&quot;client_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;client_type&quot;</span><span class="p">:</span> <span class="s2">&quot;alignment_main&quot;</span><span class="p">,</span>  <span class="c1"># Client 类型，这里是样本对齐主节点</span>
+                <span class="s2">&quot;computation_port&quot;</span><span class="p">:</span> <span class="mi">8378</span><span class="p">,</span>  <span class="c1"># Client进行MPC计算的RPC端口</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;feature_client&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;addr&quot;</span><span class="p">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http_port&quot;</span><span class="p">:</span> <span class="mi">8084</span><span class="p">,</span>
+            <span class="s2">&quot;client_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;client_type&quot;</span><span class="p">:</span> <span class="s2">&quot;alignment_data&quot;</span><span class="p">,</span>  <span class="c1"># 样本对齐的数据节点，这种Client需要有额外的参数，直接加在下面即可。</span>
+                <span class="s2">&quot;computation_port&quot;</span><span class="p">:</span> <span class="mi">8085</span><span class="p">,</span>
+                <span class="s2">&quot;raw_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;Splitted_Indexed_Data/credit_default_data1.csv&quot;</span><span class="p">,</span>  <span class="c1"># 原始数据路径</span>
+                <span class="s2">&quot;out_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;test-f1&quot;</span><span class="p">,</span>  <span class="c1"># 对齐后的数据路径（这里的路径并不是绝对路径，而是根据用户配置的某个根目录的相对路径），</span>
+                <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;X1&quot;</span><span class="p">,</span> <span class="s2">&quot;X2&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;feature_client&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;addr&quot;</span><span class="p">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http_port&quot;</span><span class="p">:</span> <span class="mi">8082</span><span class="p">,</span>
+            <span class="s2">&quot;client_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;computation_port&quot;</span><span class="p">:</span> <span class="mi">8083</span><span class="p">,</span>
+                <span class="s2">&quot;client_type&quot;</span><span class="p">:</span> <span class="s2">&quot;alignment_data&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;raw_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;Splitted_Indexed_Data/credit_default_data2.csv&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;out_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;test-f2&quot;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;label_client&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;addr&quot;</span><span class="p">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http_port&quot;</span><span class="p">:</span> <span class="mi">8884</span><span class="p">,</span>
+            <span class="s2">&quot;client_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;computation_port&quot;</span><span class="p">:</span> <span class="mi">18885</span><span class="p">,</span>
+                <span class="s2">&quot;client_type&quot;</span><span class="p">:</span> <span class="s2">&quot;alignment_data&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;raw_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;Splitted_Indexed_Data/credit_default_label.csv&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;out_data_path&quot;</span><span class="p">:</span> <span class="s2">&quot;test-l&quot;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>JSON包含一个 <code class="code docutils literal notranslate"><span class="pre">task_name</span></code> 属性表示任务的名称。 <code class="code docutils literal notranslate"><span class="pre">clients</span></code> 属性表示参与节点的列表。其中 <code class="code docutils literal notranslate"><span class="pre">role</span></code> 属性表示该节点的角色，总共有以下五种：</p>
+<ul class="simple">
+<li><p>feature_client: 提供训练的样本特征的节点</p></li>
+<li><p>label_client：提供训练的样本标签的节点</p></li>
+<li><p>main_client: 训练的主节点，进行统一的调度或者是主要计算</p></li>
+<li><p>crypto_producer：训练的加密提供方，比如提供矩阵乘法的Beaver Triple</p></li>
+</ul>
+<p>注意在一个任务中，并非一定要四种角色都有。比如一般预处理任务并不需要 <code class="code docutils literal notranslate"><span class="pre">crypto_producer</span></code>，因为不需要进行加密的矩阵乘法。</p>
+<p>在接收到这个JSON文件后，主服务器会将其存储。如果是预处理任务，主服务器还将获取其各个节点产生的数据文件名称，将任务名-数据文件名称的映射保存下来。然后主服务器根据该JSON文件生成各个子节点的任务请求，发送给子节点的服务。子节点服务器收到请求后在指定目录下创建文件夹和任务的python脚本，等待任务开始。</p>
+</div>
+<div class="section" id="id3">
+<h3>任务开始<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Client/index.html" class="btn btn-neutral float-right" title="Client" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="GetStarted.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Zheng Fei
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
